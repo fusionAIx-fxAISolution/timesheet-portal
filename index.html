@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<!-- v20260617-070729 -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Timesheet — fusionAIx</title>
+<!-- Keka Icons from CDN -->
+<link rel="stylesheet" href="https://cdn.keka.com/shared/icons/1.2.2/keka-icons.min.css">
+<!-- MSAL -->
+<script>
+(function(){
+  var s=document.createElement('script');
+  s.src='https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js';
+  s.async=false;
+  s.onload=function(){console.log('[MSAL] Loaded');};
+  s.onerror=function(){
+    var f=document.createElement('script');
+    f.src='https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js';
+    f.async=false;
+    f.onload=function(){console.log('[MSAL] Loaded from fallback CDN');};
+    document.head.appendChild(f);
+  };
+  document.head.appendChild(s);
+})();
+</script>
+<style>
+/* ── RESET & BASE ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{opacity:1}
+body{font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;
+  background:#F2F3F5;color:#0F1824;display:flex;min-height:100vh;overflow:hidden}
+
+/* ── KEKA DESIGN TOKENS ── */
+:root{
+  --keka-purple:      #1363BA;
+  --keka-purple-dark: #152140;
+  --keka-purple-light:#E8F2FD;
+  --keka-text:        #0F1824;
+  --keka-text-2:      #5E6978;
+  --keka-hint:        #848F9F;
+  --keka-border:      #EBEDEF;
+  --keka-bg:          #F2F3F5;
+  --keka-white:       #FFFFFF;
+  --keka-success:     #1F8C49;
+  --keka-success-bg:  #E6F4EC;
+  --keka-warn:        #B45309;
+  --keka-warn-bg:     #FEF3C7;
+  --keka-danger:      #B91C1C;
+  --keka-danger-bg:   #FEE2E2;
+  --keka-blue:        #1D4ED8;
+  --keka-blue-bg:     #EFF6FF;
+  --sidebar-w:        72px;
+  --header-h:         52px;
+}
+
+/* ── LEFT SIDEBAR ── */
+.sidebar{
+  width:var(--sidebar-w);background:#152140;
+  display:flex;flex-direction:column;align-items:center;
+  padding:0;flex-shrink:0;height:100vh;position:fixed;left:0;top:0;z-index:100;
+}
+.sb-logo{
+  width:100%;height:var(--header-h);display:flex;align-items:center;
+  justify-content:center;border-bottom:1px solid rgba(255,255,255,.08);
+  flex-shrink:0;
+}
+.sb-logo svg{width:32px;height:32px}
+.sb-nav{flex:1;width:100%;padding:8px 0;overflow-y:auto}
+.sb-item{
+  width:100%;display:flex;flex-direction:column;align-items:center;
+  gap:3px;padding:10px 6px;cursor:pointer;
+  color:rgba(255,255,255,.45);font-size:9px;font-weight:500;
+  border:none;background:transparent;text-decoration:none;
+  border-left:3px solid transparent;transition:all .15s;position:relative;
+}
+.sb-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.8)}
+.sb-item.active{
+  background:rgba(19,99,186,.25);color:#fff;
+  border-left-color:#1363BA;
+}
+.sb-item .ki{font-size:20px;line-height:1}
+.sb-item span{font-size:9px;font-weight:500;letter-spacing:.01em}
+.sb-badge{
+  position:absolute;top:8px;right:10px;
+  background:#EF4444;color:#fff;font-size:8px;font-weight:700;
+  border-radius:10px;padding:1px 4px;min-width:14px;text-align:center;
+}
+.sb-divider{width:40px;height:1px;background:rgba(255,255,255,.08);margin:4px auto}
+.sb-bottom{margin-top:auto;padding-bottom:8px;width:100%}
+
+/* ── MAIN AREA ── */
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+/* ── HEADER ── */
+.header{
+  height:var(--header-h);background:#152140;
+  display:flex;align-items:center;padding:0 16px;gap:12px;
+  flex-shrink:0;position:sticky;top:0;z-index:50;
+}
+.hdr-brand{
+  font-size:13px;font-weight:700;color:#fff;letter-spacing:.08em;
+  white-space:nowrap;margin-right:4px;
+}
+.hdr-search{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.15);border-radius:50px;
+  padding:7px 16px;color:rgba(255,255,255,.7);font-size:11px;
+  flex:0 0 280px;max-width:280px;cursor:pointer;border:none;
+  transition:background .15s;
+}
+.hdr-search:hover{background:rgba(255,255,255,.22)}
+.hdr-search .ki{font-size:14px}
+.hdr-right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.hdr-icon{
+  width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  color:rgba(255,255,255,.8);cursor:pointer;font-size:18px;
+  border:none;background:transparent;position:relative;
+  transition:background .15s;
+}
+.hdr-icon:hover{background:rgba(255,255,255,.15)}
+.hdr-avatar{
+  width:34px;height:34px;border-radius:50%;
+  background:rgba(255,255,255,.25);border:2px solid rgba(255,255,255,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:#fff;cursor:pointer;flex-shrink:0;
+}
+.hdr-name{font-size:12px;color:rgba(255,255,255,.9);white-space:nowrap}
+
+/* ── SUB NAV TABS ── */
+.subnav{
+  background:#fff;border-bottom:1px solid var(--keka-border);
+  display:flex;align-items:center;padding:0 20px;flex-shrink:0;
+  height:44px;
+}
+.tab{
+  padding:0 4px;height:100%;display:flex;align-items:center;
+  font-size:12px;font-weight:500;color:var(--keka-text-2);
+  cursor:pointer;border-bottom:2px solid transparent;
+  margin-right:24px;transition:all .15s;white-space:nowrap;
+  border:none;background:transparent;
+}
+.tab:hover{color:#1363BA}
+.tab.active{color:#1363BA;border-bottom-color:#1363BA;font-weight:600}
+
+/* ── CONTENT ── */
+.content{flex:1;overflow-y:auto;background:var(--keka-bg);padding:0}
+
+/* ── WELCOME BANNER ── */
+.welcome{
+  background:linear-gradient(135deg,#152140 0%,#253A71 60%,#1363BA 100%);
+  padding:16px 20px;display:flex;align-items:center;justify-content:space-between;
+}
+.welcome-text{font-size:15px;font-weight:600;color:#fff}
+.welcome-sub{font-size:11px;color:rgba(255,255,255,.65);margin-top:3px}
+
+/* ── CARD / APP ── */
+.card{
+  background:#fff;border:1px solid var(--keka-border);
+  border-radius:8px;margin:16px;overflow:hidden;position:relative;
+}
+
+/* ── LOADER ── */
+#loader{
+  position:absolute;inset:0;background:rgba(255,255,255,.95);
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;z-index:50;gap:14px;border-radius:8px;
+}
+#loader.hidden{display:none}
+.spinner{
+  width:36px;height:36px;
+  border:3px solid var(--keka-border);
+  border-top-color:#1363BA;
+  border-radius:50%;animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loader-msg{font-size:12px;color:var(--keka-text-2);font-weight:500}
+
+/* ── TOOLBAR ROW ── */
+.toolbar{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 16px;border-bottom:1px solid var(--keka-border);
+  background:#fff;flex-wrap:wrap;
+}
+.btn-today{
+  padding:5px 12px;border-radius:6px;
+  border:1px solid var(--keka-border);background:#fff;
+  font-size:11px;cursor:pointer;color:var(--keka-text);font-weight:500;
+}
+.btn-today:hover{background:var(--keka-bg)}
+.btn-nav{
+  width:28px;height:28px;border-radius:6px;
+  border:1px solid var(--keka-border);background:#fff;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:var(--keka-text-2);font-size:16px;
+}
+.btn-nav:hover{background:var(--keka-bg);color:#1363BA}
+.range-lbl{font-size:13px;font-weight:600;color:var(--keka-text);flex:1}
+.badge-status{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:10px;padding:3px 10px;border-radius:20px;font-weight:600;
+}
+.bd{background:var(--keka-bg);color:var(--keka-text-2)}
+.bs{background:#E8F2FD;color:#1363BA}
+.ba{background:var(--keka-success-bg);color:var(--keka-success)}
+.br{background:var(--keka-danger-bg);color:var(--keka-danger)}
+.view-sw{
+  display:flex;border:1px solid var(--keka-border);
+  border-radius:6px;overflow:hidden;
+}
+.vsw{
+  padding:5px 14px;font-size:11px;font-weight:500;
+  border:none;background:transparent;color:var(--keka-text-2);cursor:pointer;
+}
+.vsw.on{background:#1363BA;color:#fff}
+.vsw:hover:not(.on){background:var(--keka-bg)}
+.btn-submit{
+  padding:6px 18px;border-radius:6px;border:none;
+  background:#1363BA;color:#fff;
+  font-size:11px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;gap:5px;
+}
+.btn-submit:disabled{opacity:.4;cursor:not-allowed}
+.btn-submit:hover:not(:disabled){background:#152140}
+
+/* ── ERROR BANNER ── */
+.err-banner{
+  display:none;padding:9px 16px;
+  background:#FFF1F1;color:var(--keka-danger);
+  font-size:12px;border-bottom:1px solid #FCA5A5;
+  align-items:center;gap:8px;
+}
+.err-banner.show{display:flex}
+
+/* ── LEGEND ── */
+.legend{
+  display:flex;gap:16px;padding:7px 16px;
+  border-bottom:1px solid var(--keka-border);
+  background:#FAFBFC;flex-wrap:wrap;
+}
+.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--keka-text-2)}
+.ldot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* ── GRID ── */
+.grid-outer{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.grid-inner{display:flex;min-width:max-content;align-items:flex-start}
+
+/* Frozen column */
+.frozen{
+  flex-shrink:0;background:#152140;
+  position:sticky;left:0;z-index:30;
+  box-shadow:2px 0 6px rgba(0,0,0,.12);
+}
+.fh-top{height:28px;background:#152140}
+.fh-mid{
+  height:31px;background:#253A71;
+  display:flex;align-items:center;padding:0 16px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.col-n{font-size:11px;font-weight:600;color:rgba(255,255,255,.8);width:148px}
+.col-i{font-size:11px;font-weight:600;color:rgba(255,255,255,.8);width:70px}
+.fh-date{height:26px;background:#253A71}
+.femp{
+  height:42px;display:flex;align-items:center;padding:0 16px;
+  background:#fff;border-bottom:1px solid var(--keka-border);overflow:hidden;
+}
+.femp:hover{background:var(--keka-bg)}
+.femp.mine{background:#E8F2FD}
+.femp.mine:hover{background:#D0E8F9}
+.femp-name{
+  font-size:12px;font-weight:500;width:148px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--keka-text);
+}
+.femp-name.me{color:#1363BA;font-weight:600}
+.femp-id{
+  font-size:10px;color:var(--keka-hint);width:70px;
+  font-family:'Courier New',monospace;
+}
+.ftotal{
+  height:36px;background:var(--keka-bg);
+  display:flex;align-items:center;padding:0 16px;
+  border-top:2px solid var(--keka-border);
+}
+.ftotal-lbl{font-size:11px;font-weight:600;color:var(--keka-text-2)}
+
+/* Table */
+table.ts{border-collapse:collapse;table-layout:fixed}
+.thw{
+  background:#253A71;text-align:center;padding:0;height:31px;
+  font-size:11px;font-weight:600;color:#fff;
+  border-left:2px solid #1363BA;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.thw span{font-size:10px;font-weight:400;color:rgba(255,255,255,.5);margin-left:3px}
+.thd{
+  background:#FAFBFF;text-align:center;padding:0;height:31px;
+  font-size:11px;font-weight:600;color:var(--keka-text-2);
+  border-left:1px solid var(--keka-border);
+  border-bottom:1px solid var(--keka-border);width:80px;
+}
+.thd.we{background:var(--keka-bg);color:var(--keka-hint)}
+.thdt{
+  background:#FAFBFF;text-align:center;padding:0;height:26px;
+  font-size:10px;color:var(--keka-hint);
+  border-left:1px solid var(--keka-border);
+  border-bottom:1px solid var(--keka-border);
+}
+.thdt.we{background:var(--keka-bg)}
+.thdt.tdh{color:#1363BA;font-weight:700}
+.thwt{
+  background:#152140;text-align:center;padding:0;height:31px;
+  font-size:11px;font-weight:600;color:rgba(255,255,255,.85);
+  border-left:2px solid #1363BA;width:70px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.thst{
+  background:#152140;text-align:center;padding:0;height:88px;
+  font-size:11px;font-weight:600;color:rgba(255,255,255,.85);
+  border-left:1px solid rgba(255,255,255,.08);width:92px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+td.dc{
+  width:80px;height:42px;border-left:1px solid var(--keka-border);
+  border-bottom:1px solid var(--keka-border);padding:0;
+  text-align:center;background:#fff;vertical-align:middle;
+}
+td.dc.we{background:#FAFAFA}
+td.dc.tdc{background:#EFF6FC}
+td.dc.mine{background:#E8F2FD}
+td.dc.mine.we{background:#D0E8F9}
+td.dc.mine.future{background:#f3f2f1!important}
+td.dc.mine.future input{cursor:not-allowed!important;color:#c8c6c4!important}
+td.dc input{
+  width:100%;height:100%;border:none;background:transparent;
+  text-align:center;font-size:14px;font-weight:500;color:var(--keka-text);
+  outline:none;padding:0;font-family:'Segoe UI',sans-serif;
+  cursor:not-allowed;display:block;line-height:1;
+}
+td.dc.mine input{cursor:text;color:#1363BA;font-size:14px}
+td.dc.mine input:focus{background:#C5E0F5}
+td.dc.we input{color:#CBD5E1;font-size:16px}
+td.wt{
+  width:70px;height:42px;border-left:2px solid #1363BA;
+  border-bottom:1px solid var(--keka-border);text-align:center;
+  font-size:14px;font-weight:600;background:var(--keka-bg);vertical-align:middle;
+}
+td.wt.mine{background:#E8F2FD;color:#1363BA;font-size:14px;font-weight:700}
+td.st{
+  width:92px;height:42px;border-left:1px solid var(--keka-border);
+  border-bottom:1px solid var(--keka-border);text-align:center;
+  vertical-align:middle;background:#fff;
+}
+td.ct{
+  height:36px;border-left:1px solid var(--keka-border);
+  border-top:2px solid var(--keka-border);text-align:center;
+  font-size:12px;font-weight:600;background:var(--keka-bg);
+  vertical-align:middle;color:var(--keka-text-2);
+}
+td.ct.we{background:#F5F5F5;color:var(--keka-hint)}
+td.cwt{
+  border-left:2px solid #1363BA;
+  border-top:2px solid var(--keka-border);text-align:center;
+  font-size:13px;font-weight:700;background:var(--keka-bg);vertical-align:middle;
+}
+
+/* ── SUMMARY BAR ── */
+.sumbar{
+  display:flex;gap:0;border-top:1px solid var(--keka-border);
+  background:#fff;flex-wrap:wrap;
+}
+.si{
+  flex:1;min-width:120px;padding:12px 16px;
+  border-right:1px solid var(--keka-border);
+}
+.si:last-child{border-right:none}
+.si-l{
+  font-size:10px;color:var(--keka-hint);margin-bottom:4px;
+  text-transform:uppercase;letter-spacing:.05em;font-weight:500;
+}
+.si-v{font-size:18px;font-weight:700;color:var(--keka-text)}
+.si-v.hl{color:#1363BA}
+
+/* ── MODAL ── */
+.modal-bg{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.45);z-index:200;
+  align-items:center;justify-content:center;padding:20px;
+}
+.modal-bg.show{display:flex}
+.modal{
+  background:#fff;border-radius:10px;padding:24px;
+  width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.2);
+}
+.modal-title{font-size:15px;font-weight:700;margin-bottom:6px;color:var(--keka-text)}
+.modal-sub{font-size:12px;color:var(--keka-text-2);margin-bottom:14px;line-height:1.6}
+.modal-det{background:var(--keka-bg);border-radius:6px;padding:10px 14px;margin-bottom:14px}
+.mdr{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--keka-border)}
+.mdr:last-child{border-bottom:none}
+.mdr-l{color:var(--keka-hint)}.mdr-v{font-weight:600;color:var(--keka-text)}
+.modal-btns{display:flex;gap:8px}
+.mbtn{flex:1;padding:9px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer}
+.mbtn-cancel{border:1px solid var(--keka-border);background:#fff;color:var(--keka-text)}
+.mbtn-ok{border:none;background:#1363BA;color:#fff}
+.mbtn-ok:hover{background:#152140}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:24px;right:24px;padding:11px 18px;
+  border-radius:8px;font-size:12px;font-weight:600;opacity:0;
+  transition:opacity .3s;pointer-events:none;z-index:300;
+  box-shadow:0 4px 20px rgba(0,0,0,.15);max-width:340px;
+}
+.toast.show{opacity:1}
+.t-ok{background:var(--keka-success-bg);color:var(--keka-success);border:1px solid #86EFAC}
+.t-err{background:var(--keka-danger-bg);color:var(--keka-danger);border:1px solid #FCA5A5}
+.t-info{background:var(--keka-blue-bg);color:var(--keka-blue);border:1px solid #93C5FD}
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<div class="sidebar">
+  <div class="sb-logo">
+    <svg viewBox="0 0 147 114" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M120.47 66.75L140.024 87.44C143.377 90.99 140.856 96.82 135.976 96.82C134.449 96.82 132.989 96.2 131.939 95.09L113.293 75.44C111.094 73.12 107.399 73.12 105.208 75.45L86.72 95.08C85.67 96.19 84.2 96.82 82.67 96.82H82.36C77.47 96.82 74.96 90.98 78.32 87.43L97.87 66.8C99.9 64.65 99.9 61.29 97.86 59.14L81.03 41.47C78.84 39.16 75.15 39.17 72.96 41.48L22.13 95.26C21.08 96.37 19.59 97 18.06 97C13.18 97 10.54 91.15 13.91 87.61L73.05 25.24C75.24 22.93 78.92 22.93 81.11 25.23L105.21 50.46C107.41 52.76 111.08 52.75 113.27 50.45L118.42 45.02C120.6 42.74 124.23 42.71 126.44 44.97L126.54 45.08C128.64 47.23 128.65 50.67 126.55 52.83L120.52 59.06C118.45 61.19 118.42 64.59 120.47 66.75Z" fill="white" opacity="0.9"/>
+      <circle cx="135" cy="33" r="11" fill="white" opacity="0.7"/>
+    </svg>
+  </div>
+  <nav class="sb-nav">
+    <a class="sb-item active" href="#/me/attendance" title="Attendance">
+      <span class="ki ki-user"></span><span>Attendance</span>
+    </a>
+  </nav>
+  <div class="sb-bottom"></div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+
+  <!-- HEADER -->
+  <div class="header">
+    <span class="hdr-brand">FUSIONAIX</span>
+    <button class="hdr-search" onclick="return false">
+      <span class="ki ki-search"></span>
+      <span>Search employees or actions (Ex: Apply Leave)</span>
+    </button>
+    <div class="hdr-right">
+      <button class="hdr-icon" title="Notifications">
+        <span class="ki ki-bell"></span>
+      </button>
+      <div class="hdr-avatar" id="ua">...</div>
+      <span class="hdr-name" id="user-label">Loading...</span>
+    </div>
+  </div>
+
+  <!-- SUB NAV -->
+  <div class="subnav">
+    <button class="tab active" id="tab-timesheet" onclick="switchTab('timesheet')">TIMESHEET</button>
+    <button class="tab" id="tab-approvals" onclick="switchTab('approvals')">APPROVALS</button>
+    <button class="tab" id="tab-history" onclick="switchTab('history')">HISTORY</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- WELCOME BANNER -->
+    <div class="welcome">
+      <div>
+        <div class="welcome-text" id="wb-greeting">Timesheet Portal</div>
+        <div class="welcome-sub">Fill in your daily hours and submit by end of week</div>
+      </div>
+      <svg width="70" height="30" viewBox="0 0 457 114" fill="none" opacity="0.15">
+        <path d="M120.47 66.75L140.024 87.44C143.377 90.99 140.856 96.82 135.976 96.82C134.449 96.82 132.989 96.2 131.939 95.09L113.293 75.44C111.094 73.12 107.399 73.12 105.208 75.45L86.72 95.08C85.67 96.19 84.2 96.82 82.67 96.82H82.36C77.47 96.82 74.96 90.98 78.32 87.43L97.87 66.8C99.9 64.65 99.9 61.29 97.86 59.14L81.03 41.47C78.84 39.16 75.15 39.17 72.96 41.48L22.13 95.26C21.08 96.37 19.59 97 18.06 97C13.18 97 10.54 91.15 13.91 87.61L73.05 25.24C75.24 22.93 78.92 22.93 81.11 25.23L105.21 50.46C107.41 52.76 111.08 52.75 113.27 50.45L118.42 45.02C120.6 42.74 124.23 42.71 126.44 44.97L126.54 45.08C128.64 47.23 128.65 50.67 126.55 52.83L120.52 59.06C118.45 61.19 118.42 64.59 120.47 66.75Z" fill="white"/>
+      </svg>
+    </div>
+
+    <!-- TIMESHEET CARD -->
+    <div class="card" id="app">
+      <div id="loader"><div class="spinner"></div><div id="loader-msg">Signing in...</div></div>
+
+      <!-- TOOLBAR -->
+      <div class="toolbar">
+        <button class="btn-today" onclick="goToday()">Today</button>
+        <button class="btn-nav" onclick="nav(-1)">&#8249;</button>
+        <button class="btn-nav" onclick="nav(1)">&#8250;</button>
+        <div style="position:relative;display:flex;align-items:center">
+          <button onclick="toggleCalendar(event)" title="Pick a week"
+            style="width:28px;height:28px;border-radius:6px;border:1px solid var(--keka-border);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--keka-text-2);transition:all .15s"
+            onmouseover="this.style.borderColor='#1363BA';this.style.color='#1363BA'"
+            onmouseout="this.style.borderColor='var(--keka-border)';this.style.color='var(--keka-text-2)'">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </button>
+          <div id="cal-dropdown" style="display:none;position:absolute;top:34px;left:0;z-index:200;background:#fff;border:1px solid var(--keka-border);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.13);padding:14px 16px;min-width:260px;user-select:none">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <button onclick="calNav(-1)" style="border:none;background:none;cursor:pointer;color:var(--keka-text-2);font-size:18px;line-height:1;padding:2px 6px;border-radius:4px" onmouseover="this.style.background='var(--keka-bg)'" onmouseout="this.style.background='none'">&#8249;</button>
+              <span id="cal-month-lbl" style="font-size:13px;font-weight:600;color:var(--keka-text)"></span>
+              <button onclick="calNav(1)" style="border:none;background:none;cursor:pointer;color:var(--keka-text-2);font-size:18px;line-height:1;padding:2px 6px;border-radius:4px" onmouseover="this.style.background='var(--keka-bg)'" onmouseout="this.style.background='none'">&#8250;</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px">
+              <div style="text-align:center;font-size:10px;font-weight:600;color:var(--keka-hint);padding:3px 0">M</div>
+              <div style="text-align:center;font-size:10px;font-weight:600;color:var(--keka-hint);padding:3px 0">T</div>
+              <div style="text-align:center;font-size:10px;font-weight:600;color:var(--keka-hint);padding:3px 0">W</div>
+              <div style="text-align:center;font-size:10px;font-weight:600;color:var(--keka-hint);padding:3px 0">T</div>
+              <div style="text-align:center;font-size:10px;font-weight:600;color:var(--keka-hint);padding:3px 0">F</div>
+              <div style="text-align:center;font-size:10px;font-weight:600;color:#1363BA;padding:3px 0">S</div>
+              <div style="text-align:center;font-size:10px;font-weight:600;color:#1363BA;padding:3px 0">S</div>
+            </div>
+            <div id="cal-days" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px"></div>
+          </div>
+        </div>
+        <span class="range-lbl" id="range-lbl">
+          <span id="range-lbl-text"></span>
+        </span>
+        <span class="badge-status bd" id="my-badge">&#9998; Draft</span>
+        <div style="display:flex;gap:8px;align-items:center;margin-left:auto">
+          <div class="view-sw">
+            <button class="vsw on" id="vsw-week" onclick="setView('week')">Week</button>
+            <button class="vsw" id="vsw-month" onclick="setView('month')">Month</button>
+          </div>
+          <button class="btn-submit" id="submit-btn" onclick="openSubmit()" disabled>
+            <span class="ki ki-send" style="font-size:12px"></span> Submit
+          </button>
+        </div>
+      </div>
+
+      <!-- ERROR -->
+      <div class="err-banner" id="err-banner">
+        <span class="ki ki-warning"></span>
+        <span id="err-msg" style="flex:1"></span>
+        <button onclick="document.getElementById('err-banner').classList.remove('show')"
+          style="border:none;background:transparent;cursor:pointer;color:var(--keka-danger);font-size:18px">&#10005;</button>
+      </div>
+
+      <!-- LEGEND -->
+      <div class="legend">
+        <label class="leg" style="cursor:pointer;user-select:none;gap:6px">
+          <input type="checkbox" id="chk-myrow" checked onchange="toggleMyRow(this.checked)" style="accent-color:#1363BA;width:13px;height:13px;cursor:pointer">
+          Your row (editable)
+        </label>
+        <div class="leg" style="gap:6px">
+          <div class="ldot" style="background:#E8F2FD;border:1px solid #1363BA"></div>Others (read-only)
+        </div>
+        <label class="leg" style="cursor:pointer;user-select:none;gap:6px">
+          <input type="checkbox" id="chk-weekend" checked onchange="toggleWeekend(this.checked)" style="accent-color:#1363BA;width:13px;height:13px;cursor:pointer">
+          Weekend
+        </label>
+      </div>
+
+      <!-- GRID -->
+      <div class="grid-outer">
+        <div class="grid-inner">
+          <div class="frozen" id="frozen-col"></div>
+          <div id="data-scroll"><div style="padding:40px;text-align:center;color:var(--keka-hint)">Loading...</div></div>
+        </div>
+      </div>
+
+      <!-- SUMMARY -->
+      <div class="sumbar">
+        <div class="si"><div class="si-l">My week total</div><div class="si-v hl" id="s-mine">&#8212;</div></div>
+        <div class="si"><div class="si-l">Team total</div><div class="si-v" id="s-team">&#8212;</div></div>
+        <div class="si"><div class="si-l">My status</div><div class="si-v" id="s-status" style="font-size:12px;padding-top:4px">&#8212;</div></div>
+        <div class="si"><div class="si-l">Submitted / Total</div><div class="si-v" id="s-ratio">&#8212;</div></div>
+      </div>
+    </div>
+
+
+    <!-- APPROVALS PANEL -->
+    <div id="panel-approvals" style="display:none;margin:16px">
+      <div style="background:#fff;border:1px solid var(--keka-border);border-radius:8px;overflow:hidden">
+        <div style="padding:14px 18px;border-bottom:1px solid var(--keka-border);display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:13px;font-weight:600;color:var(--keka-text)">Pending Approvals</div>
+          <div style="font-size:11px;color:var(--keka-hint)" id="approvals-count"></div>
+        </div>
+        <div id="approvals-list" style="padding:20px;text-align:center;color:var(--keka-hint)">Loading...</div>
+      </div>
+    </div>
+
+    <!-- HISTORY PANEL -->
+    <div id="panel-history" style="display:none;margin:16px">
+      <div style="background:#fff;border:1px solid var(--keka-border);border-radius:8px;overflow:hidden">
+        <div style="padding:14px 18px;border-bottom:1px solid var(--keka-border)">
+          <div style="font-size:13px;font-weight:600;color:var(--keka-text)">Submission History</div>
+        </div>
+        <div id="history-list" style="padding:20px;text-align:center;color:var(--keka-hint)">Loading...</div>
+      </div>
+    </div>
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- MODAL -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div class="modal-det" id="modal-det"></div>
+    <div class="modal-btns" id="modal-btns"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+
+<script>
+
+/* ================================================================
+   ╔══════════════════════════════════════════════════════════════╗
+   ║  CONFIGURATION — verified for fusionaix                     ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+// ✅ Your SharePoint site base URL (NOT the page URL — just the site root)
+const SP_SITE = 'https://fusionaix.sharepoint.com/sites/TimesheetPortal';
+
+// ✅ Your SharePoint page URL (where this file is hosted)
+const PAGE_URL = 'https://fusionaix.sharepoint.com/sites/TimesheetPortal/SitePages/Timesheet-Portal.aspx';
+
+// ✅ SharePoint list names — must match EXACTLY (case-sensitive)
+const L_EMP  = 'Employees';        // Employees list
+const L_TS   = 'Timesheets';       // Timesheets list
+const L_ENT  = 'TimesheetEntries'; // TimesheetEntries list
+
+// ✅ HR email — this person sees extra HR features
+const HR_EMAIL = 'hr@fusionaix.com';
+
+const CLIENT_ID    = 'dd40aada-2cb8-4161-a7a3-54a917492adf';
+const TENANT_ID    = 'e00abbbd-d9e5-4abd-8e66-3c7e88ea3032';
+const REDIRECT_URI = 'https://nagendrareddyogirala.github.io/timesheet-portal/';
+const SCOPES = [
+  'https://fusionaix.sharepoint.com/AllSites.Read',
+  'https://fusionaix.sharepoint.com/AllSites.Write'
+];
+
+let msalConfig, msalApp;
+
+async function getToken() {
+  const accounts = msalApp.getAllAccounts();
+  if (!accounts.length) throw new Error('Not signed in');
+  try {
+    const r = await msalApp.acquireTokenSilent({ scopes: SCOPES, account: accounts[0] });
+    return r.accessToken;
+  } catch(e) {
+    const r = await msalApp.acquireTokenPopup({ scopes: SCOPES, account: accounts[0] });
+    return r.accessToken;
+  }
+}
+
+function setMsg(m) {
+  const el = document.getElementById('loader-msg');
+  if (el) el.textContent = m;
+}
+
+function startWhenReady(attempts) {
+  attempts = attempts || 0;
+  if (typeof msal !== 'undefined') {
+    console.log('[App] MSAL ready, initializing...');
+    msalConfig = {
+      auth: { clientId: CLIENT_ID, authority: 'https://login.microsoftonline.com/' + TENANT_ID, redirectUri: REDIRECT_URI },
+      cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
+    };
+    msalApp = new msal.PublicClientApplication(msalConfig);
+    console.log('[App] msalApp created, starting init...');
+    init();
+    return;
+  }
+  if (attempts > 60) {
+    setMsg('Auth library failed to load. Please refresh.');
+    return;
+  }
+  setTimeout(function() { startWhenReady(attempts + 1); }, 100);
+}
+
+
+
+/* ================================================================
+   CONSTANTS
+   ================================================================ */
+const TODAY   = new Date();
+const MONTHS  = ['January','February','March','April','May','June',
+                 'July','August','September','October','November','December'];
+const MS      = ['Jan','Feb','Mar','Apr','May','Jun',
+                 'Jul','Aug','Sep','Oct','Nov','Dec'];
+const DL      = ['S','M','T','W','T','F','S'];
+
+/* ================================================================
+   STATE
+   ================================================================ */
+let anchor      = new Date();
+let cView       = 'week';
+let me          = null;    // { email, name, initials, isHR }
+let emps        = [];      // [{ spId, id, name, email }]
+let statuses    = {};      // email → { spItemId, status, totalHours, rejectionReason }
+let digest      = null;    // SharePoint request digest (required for writes)
+const H         = {};      // hkey → { value, spId }
+const timers    = {};      // hkey → debounce timer id
+
+/* ================================================================
+   ── SHAREPOINT REST API LAYER ──
+
+   All communication with SharePoint goes through these 4 functions.
+   They handle authentication automatically using the browser's
+   existing Microsoft session cookie — no login needed.
+   ================================================================ */
+
+/**
+ * GET: Read data from a SharePoint REST endpoint
+ * Used for: loading employees, timesheets, entries, current user
+ */
+async function spGET(path) {
+  const token = await getToken();
+  const url   = `${SP_SITE}/_api/${path}`;
+  const res   = await fetch(url, {
+    headers: {
+      'Accept':        'application/json;odata=nometadata',
+      'Authorization': 'Bearer ' + token
+    }
+  });
+  if (res.status === 401) { sessionStorage.clear(); throw new Error('Session expired. Please refresh.'); }
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`SharePoint error (${res.status}): ${txt.slice(0,150)}`);
+  }
+  return res.json();
+}
+
+/**
+ * POST: Create a new item in a SharePoint list
+ * Used for: creating a new timesheet row, creating entry rows
+ */
+async function spPOST(listName, body) {
+  const d   = digest || await getDigest();
+  const url = `${SP_SITE}/_api/web/lists/getbytitle('${listName}')/items`;
+  const res = await fetch(url, {
+    method:      'POST',
+    headers: {
+      'Accept':          'application/json;odata=nometadata',
+      'Content-Type':    'application/json;odata=nometadata',
+      'Authorization':   'Bearer ' + (await getToken()),
+      'X-RequestDigest': d
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`SharePoint create failed (${res.status}): ${txt.slice(0,300)}`);
+  }
+  return res.json(); // Returns the new item including its ID
+}
+
+/**
+ * PATCH: Update an existing item in a SharePoint list
+ * Used for: updating hours, changing status to Submitted/Approved/Rejected
+ */
+async function spPATCH(listName, itemId, body) {
+  const d   = digest || await getDigest();
+  const url = `${SP_SITE}/_api/web/lists/getbytitle('${listName}')/items(${itemId})`;
+  const res = await fetch(url, {
+    method:      'POST',           // SharePoint uses POST with X-HTTP-Method: MERGE
+    headers: {
+      'Accept':          'application/json;odata=nometadata',
+      'Content-Type':    'application/json;odata=nometadata',
+      'Authorization':   'Bearer ' + (await getToken()),
+      'X-RequestDigest': d,
+      'IF-MATCH':        '*',      // Update regardless of version
+      'X-HTTP-Method':   'MERGE'   // Tells SP this is an update not a create
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok && res.status !== 204) {
+    const txt = await res.text();
+    throw new Error(`SharePoint update failed (${res.status}): ${txt.slice(0,300)}`);
+  }
+  return true;
+}
+
+/**
+ * Get SharePoint Form Digest — required security token for all writes
+ * Automatically refreshed every 25 minutes before expiry
+ */
+async function getDigest() {
+  const token = await getToken();
+  const res = await fetch(`${SP_SITE}/_api/contextinfo`, {
+    method: 'POST',
+    headers: { 'Accept': 'application/json;odata=nometadata', 'Authorization': 'Bearer ' + token }
+  });
+  if (!res.ok) throw new Error('Cannot connect to SharePoint. Are you logged in with your Microsoft account?');
+  const data = await res.json();
+  digest = data.FormDigestValue;
+  setTimeout(() => { digest = null; }, 25 * 60 * 1000); // Refresh before 30min expiry
+  return digest;
+}
+
+/* ================================================================
+   ── DATA LOADING FUNCTIONS ──
+   Each function calls one SharePoint REST endpoint
+   ================================================================ */
+
+/**
+ * API CALL 1: Get the currently logged-in Microsoft user
+ * Endpoint:   GET /_api/web/currentuser
+ * Returns:    Email (their M365 work email) + Title (display name)
+ */
+async function loadMe() {
+  setMsg('Getting your account details...');
+  const d     = await spGET('web/currentuser');
+  const email = (d.Email || '').toLowerCase().trim();
+  const name  = d.Title || 'Unknown';
+  const parts = name.split(' ');
+  return {
+    email,
+    name,
+    initials: ((parts[0]?.[0] || '') + (parts[parts.length-1]?.[0] || '')).toUpperCase(),
+    isHR: email === HR_EMAIL.toLowerCase()
+  };
+}
+
+/**
+ * API CALL 2: Get all active employees from the Employees list
+ * Endpoint:   GET /_api/web/lists/getbytitle('Employees')/items
+ * Filter:     IsActive eq 1   ← only show active employees
+ * Columns:    ID, FullName, EmployeeEmail, EmpID, Department
+ */
+async function loadEmps() {
+  setMsg('Loading employee list...');
+  const d = await spGET(
+    `web/lists/getbytitle('${L_EMP}')/items` +
+    `?$filter=IsActive eq 1&$orderby=Title asc&$top=500`
+  );
+  return (d.value || []).map(e => ({
+    spId:  e.ID,
+    id:    e.EmpID   || `EMP${String(e.ID).padStart(3,'0')}`,
+    name:  e.FullName0 || e.FullName || e.Title || 'Unknown',
+    email: (e.EmployeeEmail0 || e.EmployeeEmail || '').toLowerCase().trim(),
+    dept:  e.Department || ''
+  }));
+}
+
+/**
+ * API CALL 3: Get timesheet status for all employees for a given week
+ * Endpoint:   GET /_api/web/lists/getbytitle('Timesheets')/items
+ * Filter:     WeekStartDate eq datetime'2026-06-15T00:00:00Z'
+ * Returns:    Status, TotalHours, RejectionReason per employee
+ */
+async function loadStatuses(weekStart) {
+  setMsg('Loading timesheet status...');
+  const iso = toISO(weekStart);
+  const d   = await spGET(
+    `web/lists/getbytitle('${L_TS}')/items` +
+    `?$filter=WeekStartDate eq datetime'${iso}T00:00:00Z'&$top=500`
+  );
+  const map = {};
+  (d.value || []).forEach(r => {
+    const em = (r.Title || r.EmployeeEmail0 || r.EmployeeEmail || '').toLowerCase().trim();
+    map[em]  = {
+      spItemId:        r.ID,
+      status:          r.Status          || 'Draft',
+      totalHours:      r.TotalHours      || 0,
+      rejectionReason: r.RejectionReason || '',
+      submittedOn:     r.SubmittedOn,
+      approvedOn:      r.ApprovedOn
+    };
+  });
+  return map;
+}
+
+/**
+ * API CALL 4: Get daily hours entries for all employees for a date range
+ * Endpoint:   GET /_api/web/lists/getbytitle('TimesheetEntries')/items
+ * Filter:     EntryDate ge '<start>' and EntryDate le '<end>'
+ * Returns:    Hours per employee per day (ID stored for future PATCH)
+ */
+async function loadEntries(weekStart, weekEnd) {
+  setMsg('Loading hours data...');
+  const s = toISO(weekStart), e = toISO(weekEnd);
+  const d = await spGET(
+    `web/lists/getbytitle('${L_ENT}')/items` +
+    `?$filter=EntryDate ge datetime'${s}T00:00:00Z' and EntryDate le datetime'${e}T23:59:59Z'&$top=5000`
+  );
+  (d.value || []).forEach(r => {
+    const em  = (r.EmployeeEmail0 || r.EmployeeEmail || '').toLowerCase().trim();
+    const ei  = emps.findIndex(x => x.email === em);
+    if (ei < 0) return;
+    const dt  = new Date(r.EntryDate);
+    H[hk(ei, dt)] = { value: r.Hours || 0, spId: r.ID };
+  });
+}
+
+/* ================================================================
+   ── DATA WRITE FUNCTIONS ──
+   ================================================================ */
+
+/**
+ * API CALL 5: Save or update a single day's hours
+ * If entry already exists in SP → PATCH it (update Hours field)
+ * If entry does not exist yet   → POST it (create new row)
+ * Called automatically 800ms after user stops typing in a cell
+ */
+async function saveEntry(ei, date, hours) {
+  const k   = hk(ei, date);
+  const emp = emps[ei];
+  const existing = H[k];
+  const dateISO  = toISO(date) + 'T00:00:00Z';
+
+  if (existing && existing.spId) {
+    // ── PATCH: entry row already exists, just update the Hours value ──
+    await spPATCH(L_ENT, existing.spId, { Hours: hours });
+    H[k] = { value: hours, spId: existing.spId }; // Keep existing SP ID
+  } else {
+    // ── POST: no entry yet, create a new row ──
+    const result = await spPOST(L_ENT, {
+      Title:         emp.name,
+      EmployeeEmail: emp.email,
+      EntryDate:     dateISO,
+      DayOfWeek:     DL[date.getDay()],
+      Hours:         hours
+    });
+    H[k] = { value: hours, spId: result.ID }; // Store new SP item ID
+  }
+}
+
+/**
+ * API CALL 6: Submit the timesheet — update status to "Submitted"
+ * If Timesheets row exists → PATCH Status to Submitted
+ * If no row yet            → POST create a new row with Status=Submitted
+ * This triggers the Power Automate approval flow automatically
+ */
+async function submitTS(weekStart, totalHours) {
+  const iso  = toISO(weekStart) + 'T00:00:00Z';
+  const em   = me.email;
+  const ex   = statuses[em];
+  const now  = new Date().toISOString();
+  const empR = emps.find(x => x.email === em);
+
+  if (ex && ex.spItemId) {
+    // ── PATCH: update existing timesheet row ──
+    await spPATCH(L_TS, ex.spItemId, {
+      Status:     'Submitted',
+      TotalHours: totalHours,
+      SubmittedOn: now
+    });
+    statuses[em] = { ...ex, status: 'Submitted', totalHours };
+  } else {
+    // ── POST: create new timesheet row ──
+    const result = await spPOST(L_TS, {
+      Title:         em,
+      EmployeeName:  me.name,
+      EmployeeID:    empR?.id || '',
+      WeekStartDate: iso,
+      Status:        'Submitted',
+      TotalHours:    totalHours,
+      SubmittedOn:   now
+    });
+    statuses[em] = { spItemId: result.ID, status: 'Submitted', totalHours };
+  }
+}
+
+/* ================================================================
+   HELPERS
+   ================================================================ */
+function hk(ei, d)    { return `${ei}_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`; }
+function getH(ei, d)  { const v = H[hk(ei,d)]; return v ? (typeof v==='object'?v.value:v) : 0; }
+function setHL(ei, d, v){ const k=hk(ei,d); H[k]={value:v, spId:H[k]?.spId||null}; }
+function toISO(d)     { return d.toISOString().split('T')[0]; }
+function addD(d, n)   { const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function sameD(a, b)  { return a.toDateString()===b.toDateString(); }
+function isWE(d)      { return d.getDay()===0||d.getDay()===6; }
+function getMon(d)    {
+  const x=new Date(d); const dw=x.getDay();
+  x.setDate(x.getDate()-(dw===0?6:dw-1)); x.setHours(0,0,0,0); return x;
+}
+function getWksInMonth(y,m){
+  const total=new Date(y,m+1,0).getDate();
+  const wks=[]; let wk=[];
+  for(let d=1;d<=total;d++){
+    const dt=new Date(y,m,d); wk.push(dt);
+    if(dt.getDay()===6||d===total){wks.push(wk);wk=[];}
+  }
+  return wks;
+}
+function getStatus(ei){ return statuses[emps[ei]?.email]?.status||'Draft'; }
+function myStatus()   { return statuses[me?.email]?.status||'Draft'; }
+function myIdx()      { return emps.findIndex(e=>e.email===me?.email); }
+function badgeCls(s)  { return {Draft:'bd',Submitted:'bs',Approved:'ba',Rejected:'br'}[s]||'bd'; }
+function badgeTxt(s)  { return {Draft:'✏ Draft',Submitted:'⏳ Submitted',Approved:'✓ Approved',Rejected:'✗ Rejected'}[s]||'✏ Draft'; }
+function badgeHTML(s) { return `<span class="my-badge ${badgeCls(s)}">${badgeTxt(s)}</span>`; }
+
+/* ================================================================
+   VIEW & NAV
+   ================================================================ */
+function setView(v){
+  cView=v;
+  document.getElementById('vsw-week').classList.toggle('on',v==='week');
+  document.getElementById('vsw-month').classList.toggle('on',v==='month');
+  loadPeriod();
+}
+function nav(d){ if(cView==='week') anchor=addD(anchor,d*7); else anchor=new Date(anchor.getFullYear(),anchor.getMonth()+d,1); loadPeriod(); }
+function goToday(){ anchor=new Date(TODAY); loadPeriod(); }
+
+function getWO(){
+  if(cView==='week'){
+    const days=Array.from({length:7},(_,i)=>addD(getMon(anchor),i));
+    return [{label:'Week',days,range:`${days[0].getDate()}–${days[6].getDate()} ${MS[days[0].getMonth()]}`}];
+  }
+  const y=anchor.getFullYear(),m=anchor.getMonth();
+  return getWksInMonth(y,m).map((wk,i)=>({
+    label:`Week ${i+1}`,days:wk,
+    range:`${wk[0].getDate()}–${wk[wk.length-1].getDate()} ${MS[wk[0].getMonth()]}`
+  }));
+}
+
+/* ================================================================
+   INIT — runs once on page load
+   ================================================================ */
+async function init(){
+  showLoad(true, 'Signing in...');
+  try {
+    try { await msalApp.handleRedirectPromise(); } catch(e) {}
+    const accounts = msalApp.getAllAccounts();
+    console.log('[App] Accounts found:', accounts.length);
+    if (!accounts.length) {
+      setMsg('Opening Microsoft login...');
+      try {
+        const result = await msalApp.loginPopup({ scopes: SCOPES, prompt: 'select_account' });
+        console.log('[App] Login success:', result.account.username);
+        window.location.reload();
+      } catch(popupErr) {
+        console.error('[App] Login failed:', popupErr.message);
+        showErr('Login failed: ' + popupErr.message + '. Please refresh and try again.');
+        showLoad(false);
+      }
+      return;
+    }
+    setMsg('Loading your timesheet...');
+    me = await loadMe();
+    // Update welcome banner
+    const wb = document.getElementById('wb-greeting');
+    if (wb) wb.textContent = 'Welcome, ' + me.name + '!';
+    document.getElementById('ua').textContent = me.initials;
+    document.getElementById('user-label').textContent = me.name + (me.isHR?' (HR)':'');
+
+    // 2. Get all active employees
+    emps = await loadEmps();
+    if(!emps.length){
+      showErr('No employees found in the Employees list. Please add employees first.');
+      showLoad(false); return;
+    }
+
+    // 3. Load period data (statuses + hours)
+    await loadPeriod();
+
+  } catch(e){
+    console.error('Init error:', e);
+    showErr('Cannot connect to SharePoint. ' + e.message +
+      ' — Make sure you are logged in with your Microsoft 365 account ('+
+      'fusionaix.sharepoint.com).');
+    showLoad(false);
+  }
+}
+
+/* ================================================================
+   LOAD PERIOD — called on nav, view change
+   ================================================================ */
+async function loadPeriod(){
+  showLoad(true);
+  try {
+    const wo       = getWO();
+    const allDays  = wo.flatMap(w=>w.days);
+    const wkStart  = getMon(allDays[0]);
+    const wkEnd    = allDays[allDays.length-1];
+    statuses       = await loadStatuses(wkStart);
+    await loadEntries(wkStart, wkEnd);
+    render();
+  } catch(e){
+    console.error('Load period error:', e);
+    showErr('Could not load data: ' + e.message);
+  } finally {
+    showLoad(false);
+  }
+}
+
+/* ================================================================
+   RENDER
+   ================================================================ */
+function render(){
+  const wo=getWO(), allDays=wo.flatMap(w=>w.days);
+  const mon=getMon(anchor), y=anchor.getFullYear(), m=anchor.getMonth();
+
+  document.getElementById('range-lbl').textContent = cView==='week'
+    ? `${MONTHS[mon.getMonth()]} ${y} · ${mon.getDate()}–${addD(mon,6).getDate()} ${MS[mon.getMonth()]}`
+    : `${MONTHS[m]} ${y}`;
+
+  const ms=myStatus();
+  const b=document.getElementById('my-badge');
+  b.className=`my-badge ${badgeCls(ms)}`; b.textContent=badgeTxt(ms);
+  const sb=document.getElementById('submit-btn');
+  sb.textContent={Draft:'▶ Submit',Submitted:'⏳ Submitted',Approved:'✓ Approved',Rejected:'↺ Resubmit'}[ms]||'▶ Submit';
+  sb.disabled=ms==='Approved'||ms==='Submitted';
+
+  buildFrozen(); buildTable(wo,allDays); updateSum(wo,allDays);
+}
+
+function buildFrozen(){
+  const mi=myIdx();
+  let h=`<div class="fh-top"></div>
+    <div class="fh-mid"><span class="col-n">Employee name</span><span class="col-i">Emp ID</span></div>
+    <div class="fh-date"></div>`;
+  emps.forEach((emp,ei)=>{
+    const mine=ei===mi;
+    h+=`<div class="femp${mine?' mine':''}">
+      <span class="femp-name" style="${mine?'color:#4f52a3;font-weight:700':''}">${mine?'▶ ':''}${emp.name}</span>
+      <span class="femp-id">${emp.id}</span>
+    </div>`;
+  });
+  h+=`<div class="ftotal"><span class="ftotal-lbl">Column total</span></div>`;
+  document.getElementById('frozen-col').innerHTML=h;
+}
+
+function buildTable(wo,allDays){
+  const mi=myIdx();
+  let t=`<table class="ts"><thead><tr>`;
+  wo.forEach(w=>{ t+=`<th class="thw" colspan="${w.days.length+1}">${w.label} <span>${w.range}</span></th>`; });
+  t+=`<th class="thst" rowspan="3">Status</th></tr><tr>`;
+  wo.forEach(w=>{
+    w.days.forEach(d=>{ t+=`<th class="thd${isWE(d)?' we':''}">${DL[d.getDay()]}</th>`; });
+    t+=`<th class="thwt">Wk total</th>`;
+  });
+  t+=`</tr><tr>`;
+  wo.forEach(w=>{
+    w.days.forEach(d=>{
+      const isT=sameD(d,TODAY);
+      t+=`<th class="thdt${isWE(d)?' we':''}${isT?' tdh':''}">${d.getDate()}</th>`;
+    });
+    t+=`<th class="thwt"></th>`;
+  });
+  t+=`</tr></thead><tbody>`;
+
+  emps.forEach((emp,ei)=>{
+    const mine=ei===mi, st=getStatus(ei), locked=st==='Submitted'||st==='Approved';
+    t+=`<tr>`;
+    wo.forEach((w,wi)=>{
+      const wt=w.days.reduce((s,d)=>s+getH(ei,d),0);
+      w.days.forEach(d=>{
+        const h=getH(ei,d),iW=isWE(d),isT=sameD(d,TODAY);
+        t+=`<td class="dc${iW?' we':''}${isT?' tdc':''}${mine?' mine':''}">
+          <input type="number" min="0" max="8" step="1"
+            value="${h||''}"
+            ${(!mine||locked||(iW&&!weekendEditable))?'disabled':''}
+            ${mine&&!locked&&(!iW||weekendEditable)
+              ?`oninput="if(parseFloat(this.value)>8){this.value=8;}onInput(${ei},${d.getTime()},this)" onchange="onChanged(${ei},${d.getTime()},this)" onkeydown="var v=parseFloat(this.value||0);if(event.key>='0'&&event.key<='9'){var n=parseFloat((this.value||'')+event.key);if(n>8){event.preventDefault();this.value='8';onInput(${ei},${d.getTime()},this);}}"`
+              :''}
+            aria-label="${emp.name} ${d.getDate()} ${MS[d.getMonth()]}">
+        </td>`;
+      });
+      t+=`<td class="wt${mine?' mine':''}" id="wt-${ei}-${wi}">${wt||0}</td>`;
+    });
+    t+=`<td class="st">${badgeHTML(st)}</td></tr>`;
+  });
+
+  // Column totals row
+  t+=`<tr>`;
+  wo.forEach((w,wi)=>{
+    w.days.forEach(d=>{
+      const ct=emps.reduce((s,_,ei)=>s+getH(ei,d),0);
+      t+=`<td class="ct${isWE(d)?' we':''}" id="ct-${d.getTime()}">${isWE(d)?'—':(ct||'')}</td>`;
+    });
+    const cwt=emps.reduce((s,_,ei)=>s+w.days.reduce((r,d)=>r+getH(ei,d),0),0);
+    t+=`<td class="cwt" id="cwt-${wi}">${cwt}</td>`;
+  });
+  t+=`<td class="ct"></td></tr></tbody></table>`;
+  document.getElementById('data-scroll').innerHTML=t;
+}
+
+/* ================================================================
+   CELL INPUT
+   ================================================================ */
+function onInput(ei,ts,inp){
+  if (parseFloat(inp.value) > 8) { inp.value = 8; }
+  if (inp.value !== '' && parseFloat(inp.value) < 0) { inp.value = 0; }
+  const d=new Date(ts), v=Math.max(0,Math.min(8,parseFloat(inp.value)||0));
+  setHL(ei,d,v);
+  const wo=getWO();
+  const wi=wo.findIndex(w=>w.days.some(x=>sameD(x,d)));
+  if(wi>=0){
+    const wt=wo[wi].days.reduce((s,x)=>s+getH(ei,x),0);
+    const e=document.getElementById(`wt-${ei}-${wi}`); if(e) e.textContent=wt||0;
+    const cwt=emps.reduce((s,_,i)=>s+wo[wi].days.reduce((r,x)=>r+getH(i,x),0),0);
+    const ce=document.getElementById(`cwt-${wi}`); if(ce) ce.textContent=cwt;
+  }
+  const ct=emps.reduce((s,_,i)=>s+getH(i,d),0);
+  const cte=document.getElementById(`ct-${d.getTime()}`); if(cte) cte.textContent=ct||'';
+  updateSum(wo,wo.flatMap(w=>w.days));
+}
+
+function onChanged(ei,ts,inp){
+  // Save to SharePoint 800ms after user stops typing
+  const d=new Date(ts), v=Math.max(0,Math.min(8,parseFloat(inp.value)||0));
+  setHL(ei,d,v);
+  const k=hk(ei,d);
+  if(timers[k]) clearTimeout(timers[k]);
+  timers[k]=setTimeout(async()=>{
+    inp.style.background='#fff4ce'; // Yellow = saving
+    try {
+      await saveEntry(ei,d,v);
+      inp.style.background='#dff6dd'; // Green = saved ✓
+      setTimeout(()=>{inp.style.background='';},1400);
+    } catch(e) {
+      inp.style.background='#fde7e9'; // Red = failed ✗
+      showToast('Could not save. Check your connection.','err');
+    }
+    delete timers[k];
+  },800);
+}
+
+function updateSum(wo,allDays){
+  const mi=myIdx();
+  const mine=mi>=0?allDays.reduce((s,d)=>s+getH(mi,d),0):0;
+  const team=emps.reduce((s,_,ei)=>s+allDays.reduce((r,d)=>r+getH(ei,d),0),0);
+  const sub=emps.filter((_,ei)=>['Submitted','Approved'].includes(getStatus(ei))).length;
+  document.getElementById('s-mine').textContent=mine+' hrs';
+  document.getElementById('s-team').textContent=team+' hrs';
+  document.getElementById('s-status').innerHTML=badgeHTML(myStatus());
+  document.getElementById('s-ratio').textContent=`${sub} / ${emps.length}`;
+}
+
+/* ================================================================
+   SUBMIT FLOW
+   ================================================================ */
+function openSubmit(){
+  const wo=getWO(), allDays=wo.flatMap(w=>w.days);
+  const mi=myIdx();
+  const mine=mi>=0?allDays.reduce((s,d)=>s+getH(mi,d),0):0;
+  const ms=myStatus(), isR=ms==='Rejected';
+
+  document.getElementById('modal-title').textContent=isR?'Resubmit timesheet?':'Submit timesheet';
+  document.getElementById('modal-sub').textContent=isR
+    ?'Your timesheet was rejected. Ready to resubmit?'
+    :'You are about to submit your timesheet for the selected week.';
+  document.getElementById('modal-det').innerHTML=`
+    <div class="mdr"><span class="mdr-l">Employee</span><span class="mdr-v">${me.name}</span></div>
+    <div class="mdr"><span class="mdr-l">Site</span><span class="mdr-v">fusionaix.sharepoint.com</span></div>
+    <div class="mdr"><span class="mdr-l">Period</span><span class="mdr-v">${document.getElementById('range-lbl').textContent}</span></div>
+    <div class="mdr"><span class="mdr-l">Total hours</span><span class="mdr-v" style="color:#4f52a3">${mine} hrs</span></div>
+  `;
+  document.getElementById('modal-btns').innerHTML=`
+    <button class="mbtn mbtn-cancel" onclick="closeModal()">Cancel</button>
+    <button class="mbtn mbtn-ok" onclick="doSubmit(${mine})">${isR?'↺ Resubmit':'▶ Submit'}</button>
+  `;
+  document.getElementById('modal-bg').classList.add('show');
+}
+
+async function doSubmit(totalHours){
+  closeModal(); showLoad(true,'Submitting...');
+  try {
+    await submitTS(getMon(anchor),totalHours);
+    showToast('Submitted! HR at hr@fusionaix.com has been notified.','ok');
+    render();
+  } catch(e){
+    console.error('Submit error:',e);
+    showToast('Could not submit: '+e.message,'err');
+  } finally { showLoad(false); }
+}
+
+/* ================================================================
+   MODAL / TOAST / LOADER / ERROR
+   ================================================================ */
+function closeModal(){ document.getElementById('modal-bg').classList.remove('show'); }
+document.getElementById('modal-bg').addEventListener('click',function(e){ if(e.target===this) closeModal(); });
+function showToast(msg,type='ok'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`toast t-${type} show`;
+  setTimeout(()=>t.classList.remove('show'),4500);
+}
+function showLoad(show,msg){
+  document.getElementById('loader').classList.toggle('hidden',!show);
+  if(msg) setMsg(msg);
+}
+function setMsg(msg){ document.getElementById('loader-msg').textContent=msg; }
+function showErr(msg){
+  document.getElementById('err-msg').textContent=msg;
+  document.getElementById('err-banner').classList.add('show');
+}
+
+/* KICK OFF */
+window.addEventListener('load', function() { startWhenReady(0); });
+
+/* ================================================================
+   TAB SWITCHING
+   ================================================================ */
+let currentTab = 'timesheet';
+
+function switchTab(tab) {
+  currentTab = tab;
+  // Update tab styles
+  ['timesheet','approvals','history'].forEach(t => {
+    const el = document.getElementById('tab-' + t);
+    if (el) el.classList.toggle('active', t === tab);
+  });
+  // Show/hide panels
+  const card = document.getElementById('app');
+  const approvals = document.getElementById('panel-approvals');
+  const history = document.getElementById('panel-history');
+  if (card) card.style.display = tab === 'timesheet' ? '' : 'none';
+  if (approvals) approvals.style.display = tab === 'approvals' ? '' : 'none';
+  if (history) history.style.display = tab === 'history' ? '' : 'none';
+  // Load content
+  if (tab === 'approvals') loadApprovals();
+  if (tab === 'history') loadHistory();
+}
+
+/* ================================================================
+   APPROVALS TAB — shows submitted timesheets pending approval (HR view)
+   ================================================================ */
+async function loadApprovals() {
+  const el = document.getElementById('approvals-list');
+  const countEl = document.getElementById('approvals-count');
+  if (!el) return;
+  el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--keka-hint)">Loading...</div>';
+  try {
+    const d = await spGET(
+      `web/lists/getbytitle('${L_TS}')/items?$top=500`
+    );
+    const allApprovals = d.value || [];
+    console.log('[Approvals] Total items:', allApprovals.length);
+    allApprovals.forEach(r => console.log('[Approvals]', r.Title, r.Status));
+    const items = allApprovals.filter(r => r.Status === 'Submitted');
+    if (countEl) countEl.textContent = items.length + ' pending';
+    if (!items.length) {
+      el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--keka-hint)"><div style="font-size:32px;margin-bottom:12px">✅</div><div style="font-weight:600">No pending approvals</div><div style="font-size:12px;margin-top:6px">All timesheets have been reviewed</div></div>';
+      return;
+    }
+    let html = '<table style="width:100%;border-collapse:collapse">';
+    html += '<thead><tr style="background:var(--keka-bg)">';
+    html += '<th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--keka-hint);border-bottom:1px solid var(--keka-border)">EMPLOYEE</th>';
+    html += '<th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--keka-hint);border-bottom:1px solid var(--keka-border)">WEEK</th>';
+    html += '<th style="padding:10px 16px;text-align:center;font-size:11px;font-weight:600;color:var(--keka-hint);border-bottom:1px solid var(--keka-border)">HOURS</th>';
+    html += '<th style="padding:10px 16px;text-align:center;font-size:11px;font-weight:600;color:var(--keka-hint);border-bottom:1px solid var(--keka-border)">SUBMITTED ON</th>';
+    html += '<th style="padding:10px 16px;text-align:center;font-size:11px;font-weight:600;color:var(--keka-hint);border-bottom:1px solid var(--keka-border)">STATUS</th>';
+    html += '</tr></thead><tbody>';
+    items.forEach(r => {
+      const week = r.WeekStartDate ? new Date(r.WeekStartDate).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      const sub  = r.SubmittedOn  ? new Date(r.SubmittedOn).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      const name = r.EmployeeName || r.Title || '—';
+      html += `<tr style="border-bottom:1px solid var(--keka-border)">
+        <td style="padding:12px 16px;font-size:12px;font-weight:500;color:var(--keka-text)">${name}</td>
+        <td style="padding:12px 16px;font-size:12px;color:var(--keka-text-2)">${week}</td>
+        <td style="padding:12px 16px;font-size:12px;text-align:center;font-weight:600;color:#1363BA">${r.TotalHours || 0} hrs</td>
+        <td style="padding:12px 16px;font-size:12px;text-align:center;color:var(--keka-text-2)">${sub}</td>
+        <td style="padding:12px 16px;text-align:center"><span style="background:#E8F2FD;color:#1363BA;font-size:10px;padding:3px 10px;border-radius:20px;font-weight:600">⏳ Submitted</span></td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div style="padding:20px;color:var(--keka-danger)">Error loading approvals: ' + e.message + '</div>';
+  }
+}
+
+/* ================================================================
+   HISTORY TAB — shows my past submitted/approved timesheets
+   ================================================================ */
+async function loadHistory() {
+  const el = document.getElementById('history-list');
+  if (!el) return;
+  el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--keka-hint)">Loading...</div>';
+  try {
+    // HR sees all, employees see only their own
+    const filter = me.isHR
+      ? `Status ne 'Draft'`
+      : `Title eq '${me.email}' and Status ne 'Draft'`;
+    const d = await spGET(
+      `web/lists/getbytitle('${L_TS}')/items?$orderby=WeekStartDate desc&$top=500`
+    );
+    const allItems = d.value || [];
+    console.log('[History] Total items from SP:', allItems.length, 'My email:', me.email);
+    allItems.forEach(r => console.log('[History] Item:', r.Title, r.Status, r.EmployeeName));
+    const items = me.isHR
+      ? allItems.filter(r => r.Status && r.Status !== 'Draft')
+      : allItems.filter(r => {
+          const email = (r.Title || '').toLowerCase().trim();
+          return email === me.email && r.Status && r.Status !== 'Draft';
+        });
+    if (!items.length) {
+      el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--keka-hint)"><div style="font-size:32px;margin-bottom:12px">📋</div><div style="font-weight:600">No history yet</div><div style="font-size:12px;margin-top:6px">Submitted timesheets will appear here</div></div>';
+      return;
+    }
+    const statusBadge = (s) => {
+      const map = {
+        Submitted: 'background:#E8F2FD;color:#1363BA',
+        Approved:  'background:#dff6dd;color:#107c10',
+        Rejected:  'background:#fde7e9;color:#a4262c',
+      };
+      const icon = {Submitted:'⏳',Approved:'✅',Rejected:'❌'};
+      return `<span style="${map[s]||'background:#f3f2f1;color:#605e5c'};font-size:10px;padding:3px 10px;border-radius:20px;font-weight:600">${icon[s]||'•'} ${s}</span>`;
+    };
+    let html = '<table style="width:100%;border-collapse:collapse">';
+    html += '<thead><tr style="background:var(--keka-bg)">';
+    const headers = me.isHR
+      ? ['EMPLOYEE','WEEK','HOURS','SUBMITTED','APPROVED ON','STATUS']
+      : ['WEEK','HOURS','SUBMITTED ON','APPROVED ON','STATUS'];
+    headers.forEach(h => {
+      html += `<th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--keka-hint);border-bottom:1px solid var(--keka-border)">${h}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+    items.forEach(r => {
+      const week = r.WeekStartDate ? new Date(r.WeekStartDate).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      const sub  = r.SubmittedOn  ? new Date(r.SubmittedOn).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      const app  = (r.ApprovedOn||r.Approved_x0020_On)   ? new Date(r.ApprovedOn||r.Approved_x0020_On).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})  : '—';
+      const name = r.EmployeeName || r.Title || '—';
+      html += `<tr style="border-bottom:1px solid var(--keka-border)">`;
+      if (me.isHR) html += `<td style="padding:12px 16px;font-size:12px;font-weight:500">${name}</td>`;
+      html += `<td style="padding:12px 16px;font-size:12px;color:var(--keka-text-2)">${week}</td>
+        <td style="padding:12px 16px;font-size:12px;font-weight:600;color:#1363BA">${r.TotalHours||r.Total_x0020_Hours||0} hrs</td>
+        <td style="padding:12px 16px;font-size:12px;color:var(--keka-text-2)">${sub}</td>
+        <td style="padding:12px 16px;font-size:12px;color:var(--keka-text-2)">${app}</td>
+        <td style="padding:12px 16px">${statusBadge(r.Status||'Draft')}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div style="padding:20px;color:var(--keka-danger)">Error loading history: ' + e.message + '</div>';
+  }
+}
+
+/* ================================================================
+   DAY-WISE RESTRICTION — only allow editing today and past days
+   ================================================================ */
+// Modified in buildTable — future days are locked
+// The existing code already uses TODAY comparison for tdc class
+// We need to make future weekdays read-only
+// This is handled in the mine&&!locked&&!iW condition in buildTable
+// Add: && !isFuture(d) to the editable condition
+function isFuture(d) {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const day = new Date(d);
+  day.setHours(0,0,0,0);
+  return day > today;
+}
+
+
+/* ================================================================
+   LEGEND CHECKBOX FUNCTIONS
+   ================================================================ */
+
+// Toggle highlight on your own row
+function toggleMyRow(show) {
+  const mi = myIdx();
+  if (mi < 0) return;
+  // Toggle mine class on femp and td.mine elements
+  document.querySelectorAll('.femp.mine, td.mine, td.dc.mine, td.wt.mine').forEach(el => {
+    el.style.opacity = show ? '' : '0.4';
+  });
+}
+
+// Toggle weekend column visibility
+let weekendVisible = true;
+let weekendEditable = false; // checkbox enables editing
+function toggleWeekend(show) {
+  weekendVisible = show;
+  weekendEditable = show; // enable editing when visible
+  render(); // re-render with new editable state
+}
+
+// Toggle today highlight
+let todayVisible = true;
+function toggleToday(show) {
+  todayVisible = show;
+  document.querySelectorAll('.tdc, .thdt.tdh').forEach(el => {
+    el.style.background = show ? '' : '';
+    el.style.visibility = '';
+    if (!show) {
+      el.classList.remove('tdc');
+      el.dataset.wasTdc = 'true';
+    } else {
+      if (el.dataset.wasTdc) el.classList.add('tdc');
+    }
+  });
+  render();
+}
+
+/* ================================================================
+   INLINE CALENDAR DROPDOWN
+   ================================================================ */
+let calViewDate = new Date(); // month currently shown in calendar
+
+function toggleCalendar(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('cal-dropdown');
+  if (dd.style.display === 'none' || !dd.style.display) {
+    calViewDate = new Date(anchor || new Date());
+    renderCalendar();
+    dd.style.display = 'block';
+    // Close on outside click
+    setTimeout(() => document.addEventListener('click', closeCalendar, { once: true }), 0);
+  } else {
+    dd.style.display = 'none';
+  }
+}
+
+function closeCalendar() {
+  const dd = document.getElementById('cal-dropdown');
+  if (dd) dd.style.display = 'none';
+}
+
+function calNav(dir) {
+  calViewDate.setMonth(calViewDate.getMonth() + dir);
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const lbl = document.getElementById('cal-month-lbl');
+  const grid = document.getElementById('cal-days');
+  if (!lbl || !grid) return;
+
+  const y = calViewDate.getFullYear();
+  const m = calViewDate.getMonth();
+  lbl.textContent = calViewDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+
+  // First day of month; adjust so week starts Monday
+  const first = new Date(y, m, 1);
+  let startDay = first.getDay(); // 0=Sun
+  startDay = (startDay === 0) ? 6 : startDay - 1; // Mon=0
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const selMon = anchor ? getMon(anchor) : getMon(new Date());
+
+  let html = '';
+  // Empty cells before first day
+  for (let i = 0; i < startDay; i++) {
+    html += '<div></div>';
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(y, m, d);
+    const mon = getMon(date);
+    const isToday = date.getTime() === today.getTime();
+    const isSel = mon.getTime() === selMon.getTime();
+    const isWknd = date.getDay() === 0 || date.getDay() === 6;
+    let bg = 'transparent', col = isWknd ? '#93A3B4' : 'var(--keka-text)', fw = '400', br = '4px';
+    if (isSel) { bg = '#1363BA'; col = '#fff'; fw = '600'; br = '50%'; }
+    else if (isToday) { bg = '#E8F2FD'; col = '#1363BA'; fw = '600'; }
+    html += `<div onclick="calPickDate(${y},${m},${d})" style="text-align:center;font-size:11px;padding:5px 2px;cursor:pointer;border-radius:${br};background:${bg};color:${col};font-weight:${fw};transition:all .1s"
+      onmouseover="if(this.style.background==='transparent'||this.style.background==='')this.style.background='var(--keka-bg)'"
+      onmouseout="if('${isSel}'!=='true'&&'${isToday}'!=='true')this.style.background='${bg}'">${d}</div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function calPickDate(y, m, d) {
+  const picked = new Date(y, m, d);
+  anchor = getMon(picked);
+  document.getElementById('cal-dropdown').style.display = 'none';
+  loadPeriod();
+}
+
+/* ================================================================
+   CALENDAR / DATE PICKER (legacy – kept for Go to week button)
+   ================================================================ */
+function openDatePicker() {
+  const picker = document.getElementById('week-picker');
+  if (!picker) return;
+  // Set current value to selected week
+  const mon = getMon(anchor);
+  const y = mon.getFullYear();
+  const weekNum = getWeekNumber(mon);
+  picker.value = y + '-W' + String(weekNum).padStart(2, '0');
+  // Position near button and make visible temporarily
+  const btn = event.currentTarget;
+  const rect = btn.getBoundingClientRect();
+  picker.style.position = 'fixed';
+  picker.style.left = rect.left + 'px';
+  picker.style.top = rect.bottom + 'px';
+  picker.style.visibility = 'visible';
+  picker.style.width = 'auto';
+  picker.style.height = 'auto';
+  picker.style.zIndex = '9999';
+  picker.focus();
+  picker.showPicker && picker.showPicker();
+  // Hide again after selection
+  picker.addEventListener('blur', () => {
+    picker.style.visibility = 'hidden';
+    picker.style.width = '0';
+    picker.style.height = '0';
+  }, { once: true });
+}
+
+function onDatePicked(value) {
+  if (!value) return;
+  const d = new Date(value + 'T00:00:00');
+  anchor = getMon(d);
+  loadPeriod();
+}
+
+function onWeekPicked(value) {
+  if (!value) return;
+  // value is like "2026-W25"
+  const parts = value.split('-W');
+  if (parts.length !== 2) return;
+  const year = parseInt(parts[0]);
+  const week = parseInt(parts[1]);
+  // Convert week number to date (Monday of that week)
+  const jan4 = new Date(year, 0, 4); // Jan 4 is always in week 1
+  const weekStart = new Date(jan4.getTime() + (week - 1) * 7 * 24 * 60 * 60 * 1000);
+  // Adjust to Monday
+  const day = weekStart.getDay();
+  const diff = (day <= 1) ? (1 - day) : (8 - day);
+  weekStart.setDate(weekStart.getDate() + (day === 1 ? 0 : diff));
+  anchor = weekStart;
+  loadPeriod();
+}
+
+function getWeekNumber(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+
+</script>
+</body>
+</html>
